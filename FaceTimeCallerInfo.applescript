@@ -6,11 +6,10 @@
 
 tell application "System Events"
 	local lastPhoneNumber
-	
 	repeat
 		try
-			if exists (process "FaceTime") then
-				set theProcess to process "FaceTime"
+			if exists (process "通知中心") then
+				set theProcess to process "通知中心"
 				if exists (windows of theProcess) then
 					set theWindows to (windows of theProcess)
 					repeat with theWindow in theWindows
@@ -21,15 +20,14 @@ tell application "System Events"
 								set classOfTheContent to (class of theContent) as text
 								if (class of theContent) is equal to (static text) or (class of theContent) as text is equal to "static text" then
 									set nameOfTheContent to (name of theContent) as text
-									if (get character 2 of nameOfTheContent) is equal to "0" then
-										set phoneNumber to (get characters 2 thru ((length of nameOfTheContent) - 1) of nameOfTheContent) as text
-										
+									set phoneNumber to (do shell script "echo " & nameOfTheContent & " | grep -o [0-9] | xargs echo | sed 's/ //g'") as text
+									if phoneNumber is not equal to "" then
 										if phoneNumber is not equal to lastPhoneNumber then
 											set lastPhoneNumber to phoneNumber
-											
-											set result to (do shell script "curl \"http://www.moyaweb.com/search_result.do?SCH_TEL_NO=" & phoneNumber & "\" | textutil -stdin -stdout -format html -convert txt -inputencoding UTF-8 -encoding UTF-8 | tr -s \"
-	 \" \" \"")
-											display notification result
+											set result to (do shell script "curl \"https://open.onebox.so.com/dataApi?query=" & phoneNumber & "&url=mobilecheck&type=mobilecheck&src=onebox\" | /usr/local/bin/jq '.data.countDesc' | textutil -stdin -stdout -format html -convert txt -inputencoding UTF-8 -encoding UTF-8 | grep -v null")
+											if result is not equal to "" then
+												display notification result
+											end if
 										end if
 									end if
 								end if
